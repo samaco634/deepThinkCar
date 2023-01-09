@@ -42,10 +42,6 @@ It will prevents mis-driving of deepThinkCar.
 servo_offset = 0
 servo.servo[0].angle = 90 + servo_offset
 
-stop_sign = cv2.CascadeClassifier('./opencv_haar/stop_sign_detection/cascade_stop_sign.xml')
-stop_width, stop_height = 40, 40
-
-
 # Prepare real starting 
 for i in range(30):
     ret, img_org = cap.read()
