@@ -5,9 +5,6 @@ import cv2
 from adafruit_servokit import ServoKit
 from jd_deep_lane_detect import JdDeepLaneDetect
 from jd_car_motor_l9110 import JdCarMotorL9110
-from jd_object_detect_thread import JdObejctDetectThread
-import time
-import datetime
 
 '''
 2. Creating object from classes
@@ -65,10 +62,6 @@ for i in range(30):
     else:
         print("cap error")
 
-
-# Start Obejct detect
-objectDetectThread = JdObejctDetectThread(cap)
-#isStop = False
 
 '''
 6. Perform real driving
