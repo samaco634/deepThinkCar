@@ -1,13 +1,8 @@
 
 import cv2 as cv
+import time
 
 cvNet = cv.dnn.readNetFromTensorflow('frozen_inference_graph.pb', 'ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
-
-img = cv.imread('stop.jpg')
-rows = img.shape[0]
-cols = img.shape[1]
-cvNet.setInput(cv.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
-cvOut = cvNet.forward()
 
 # Pretrained classes in the model
 classNames = {0: 'background',
@@ -28,18 +23,68 @@ classNames = {0: 'background',
               80: 'toaster', 81: 'sink', 82: 'refrigerator', 84: 'book', 85: 'clock',
               86: 'vase', 87: 'scissors', 88: 'teddy bear', 89: 'hair drier', 90: 'toothbrush'}
 
-for detection in cvOut[0,0,:,:]:
-    score = float(detection[2])
-    if score > 0.3:
-        
-        left = detection[3] * cols
-        top = detection[4] * rows
-        right = detection[5] * cols
-        bottom = detection[6] * rows
-        cv.rectangle(img, (int(left), int(top)), (int(right), int(bottom)), (23, 230, 210), thickness=2)
+def isStopSignDetected(img):
+    rows = img.shape[0]
+    cols = img.shape[1]
+    cvNet.setInput(cv.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
+    cvOut = cvNet.forward()
 
-        class_id = detection[1]
-        class_name=classNames[class_id]
-        cv.putText(img,class_name ,(int(left), int(top+.03*(bottom-top))),cv.FONT_HERSHEY_SIMPLEX,(.003*(right -left)),(0, 0, 255))
-cv.imshow('img', img)
-cv.waitKey()
+    for detection in cvOut[0,0,:,:]:
+        score = float(detection[2])
+        if score > 0.3:
+
+            left = detection[3] * cols
+            top = detection[4] * rows
+            right = detection[5] * cols
+            bottom = detection[6] * rows
+            cv.rectangle(img, (int(left), int(top)), (int(right), int(bottom)), (23, 230, 210), thickness=2)
+
+            class_id = detection[1]
+            class_name=classNames[class_id]
+            cv.putText(img,class_name ,(int(left), int(top+.03*(bottom-top))),cv.FONT_HERSHEY_SIMPLEX,(.003*(right -left)),(0, 0, 255))
+    return isStop, img
+
+if __name__ == '__main__':
+    # Variables to calculate FPS
+    counter, fps = 0, 0
+    start_time = time.time()
+    
+      # Visualization parameters
+    row_size = 20  # pixels
+    left_margin = 24  # pixels
+    text_color = (0, 0, 255)  # red
+    font_size = 1
+    font_thickness = 1
+    fps_avg_frame_count = 10
+    
+    camera = cv2.VideoCapture(-1)
+    camera.set(3, 320)
+    camera.set(4, 240)
+    camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    
+    while True:
+    
+        ret, img = camera.read()
+        counter += 1
+        
+        if ret:
+            isStop, img = isStopSignDetected(img)
+            
+                # Calculate the FPS
+            if counter % fps_avg_frame_count == 0:
+              end_time = time.time()
+              fps = fps_avg_frame_count / (end_time - start_time)
+              start_time = time.time()
+
+            # Show the FPS
+            fps_text = 'FPS = {:.1f}'.format(fps)
+            text_location = (left_margin, row_size)
+            cv2.putText(img, fps_text, text_location, cv2.FONT_HERSHEY_PLAIN,
+                        font_size, text_color, font_thickness)
+            
+            cv2.imshow("stop sign detect", img)
+            
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    camera.release()
+    cv2.destroyAllWindows()
