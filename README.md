@@ -1,4 +1,4 @@
-(opencv_dnn.md)
+[opencv dnn](./opencv_dnn.md)
 
 # deepThinkCar: 10만원으로 배울 수 있는 딥러닝 자율주행자동차 키트  
 
