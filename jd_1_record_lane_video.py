@@ -29,6 +29,7 @@ cap = cv2.VideoCapture(0)
 # Setting camera resolution as 320x240
 cap.set(3, 320)
 cap.set(4, 240)
+cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
 '''
 4. Creating data folder, if not exist
@@ -61,7 +62,7 @@ and wheel control while motor stop.
 It will prevents mis-driving of deepThinkCar. 
 '''
 # Servo offset. You can get offset from calibration.py
-servo_offset = 1
+servo_offset = 8
 servo.servo[0].angle = 90 + servo_offset
 
 # Prepare real starting 
@@ -86,7 +87,7 @@ for i in range(30):
 7. Starting motor before real driving 
 '''
 # Start motor 
-motor.motor_move_forward(30)
+motor.motor_move_forward(25)
 
 '''
 8. Perform real driving
@@ -109,10 +110,10 @@ while True:
         else:
             cv2.imshow('lane', img_angle)
             print(angle)
-            if angle > 140:
-                angle = 140
-            elif angle < 40:
-                angle = 40
+            if angle > 130:
+                angle = 130
+            elif angle < 50:
+                angle = 50
             servo.servo[0].angle = angle + servo_offset
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

@@ -5,7 +5,9 @@ import cv2
 from adafruit_servokit import ServoKit
 from jd_deep_lane_detect import JdDeepLaneDetect
 from jd_car_motor_l9110 import JdCarMotorL9110
+from jd_object_detect_thread import JdObejctDetectThread
 import time
+import datetime
 
 '''
 2. Creating object from classes
@@ -29,6 +31,7 @@ cap = cv2.VideoCapture(0)
 # Setting camera resolution as 320x240
 cap.set(3, 320)
 cap.set(4, 240)
+cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
 '''
 4. Preparing deepThinkCar starting.
@@ -37,35 +40,31 @@ and wheel control while motor stop.
 It will prevents mis-driving of deepThinkCar. 
 '''
 # Servo offset. You can get offset from calibration.py
-servo_offset = 8
+servo_offset = 0
 servo.servo[0].angle = 90 + servo_offset
 
 # Prepare real starting 
 for i in range(30):
     ret, img_org = cap.read()
+    print(datetime.datetime.now().strftime("%H:%M:%S"))
     if ret:
         angle_deep, img_angle = deep_detector.follow_lane(img_org)
         if img_angle is None:
             print("can't find lane...")
         else:
             print(angle_deep)
-            if angle_deep > 130:
-                angle_deep = 130
-            elif angle_deep < 50:
-                angle_deep = 50
-
-            servo.servo[0].angle = angle_deep + servo_offset	
+            if angle_deep > 40 and angle_deep < 140:
+                servo.servo[0].angle = angle_deep + servo_offset	
             		
             cv2.imshow("img_angle", img_angle)
             cv2.waitKey(1)
     else:
         print("cap error")
 
-'''
-5. Starting motor before real driving 
-'''
-# Start motor 
-motor.motor_move_forward(25)
+
+# Start Obejct detect
+objectDetectThread = JdObejctDetectThread(cap)
+#isStop = False
 
 '''
 6. Perform real driving
@@ -73,33 +72,38 @@ In this part, we perform real OpenCV lane detecting driving.
 When you press 'q' key, it stp deepThinkCar.
 While on driving, driving is recorded. 
 '''
+
 # real driving routine
 while cap.isOpened():
-    ret, img_org = cap.read()
-    # Find lane angle
-    angle_deep, img_angle = deep_detector.follow_lane(img_org)
-    if img_angle is None:
-        print("can't find lane...")
-    else:
-        print(angle_deep)
-        if angle_deep > 130:
-            angle_deep = 130
-        elif angle_deep < 50:
-            angle_deep = 50
+    isStop, isImg, stopImage = objectDetectThread.getStopSign()
+    
+    if  isStop == False:
+        print(datetime.datetime.now().strftime("%H:%M:%S"))
+        ret,  img_org = cap.read()
 
-        servo.servo[0].angle = angle_deep + servo_offset
-        cv2.imshow("img_angle", img_angle)
+        # Find lane angle
+        if ret :
+            angle_deep, img_angle = deep_detector.follow_lane(img_org)
+            if img_angle is None:
+                print("can't find lane...")
+            else:
+                print(angle_deep)
+                if angle_deep > 40 and angle_deep < 140:
+                    servo.servo[0].angle = angle_deep + servo_offset
+                motor.motor_move_forward(22)
+                cv2.imshow("img_angle", img_angle)
+    else:
+        motor.motor_stop()
+        
+#    if isImg:
+#        cv2.imshow('object detection', stopImage)
+    
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 '''
 7. Finishing the driving
 Releasing occupied resources
-'''   
+'''
 motor.motor_stop()
 cap.release()
 cv2.destroyAllWindows()
-
-
-
-        
-

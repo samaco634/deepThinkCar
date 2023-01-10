@@ -30,23 +30,31 @@ classNames = {0: 'background',
 
 # real driving routine
 def isStopSignDetected(img):
+    height, _, _ = img.shape # 240, 320
+    # remove top half of the image. It is not necesary 
+    img_poi = img #[int(height/4):,:,:]  
     
-    classes, confidences, boxes = net.detect(img, confThreshold=0.45)
-       
-    if classes.size == 0 or len(classes[np.where(classes==1) or np.where(classes==13)]) == 0: #nothing detected, detected no person and no stopsign
-        isStop = False
+    classes, confidences, boxes = net.detect(img_poi, confThreshold=0.45)
+    isStop = False
+    
+    if(len(classes) != 0):
+        if classes[np.where(classes==1)].size == 0 and classes[np.where(classes==13)].size == 0: #nothing detected, detected no person and no stopsign
+            isStop = False
+        else:
+            # Detect the stop sign, x,y = origin points, w = width, h = height
+            for classId, confidence, box in zip(classes.flatten(), confidences.flatten(), boxes):
+                if classId == 1 or classId == 13:
+                    # Draw rectangle around the stop sign
+                    stop_sign_rectangle = cv2.rectangle(img_poi, box, (0, 255, 0), 3)
+                    # Write "Stop sign" on the bottom of the rectangle
+                    class_name=classNames[classId]
+                    cv2.putText(stop_sign_rectangle, class_name , (box[0], box[1]+30),  cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0, 0, 255), 1)
+                    if (box[2] - box[0]) > stop_width or (box[3] - box[1]) > stop_height:
+                        isStop = True
     else:
-        # Detect the stop sign, x,y = origin points, w = width, h = height
-        for classId, confidence, box in zip(classes.flatten(), confidences.flatten(), boxes):
-            if classId == 1 or classId == 13:
-                # Draw rectangle around the stop sign
-                stop_sign_rectangle = cv2.rectangle(img, box, (0, 255, 0), 3)
-                # Write "Stop sign" on the bottom of the rectangle
-                class_name=classNames[classId]
-                cv.putText(stop_sign_rectangle, class_name , (box[0], box[1]+30),  cv.FONT_HERSHEY_SIMPLEX, 0.5,(0, 0, 255), 1)
-                if (box[2] - box[0]) > stop_width or (box[3] - box[1]) > stop_height:
-                    isStop = True
-    return isStop, img
+        isStop = False
+        
+    return isStop, img_poi
 
 
 if __name__ == '__main__':
