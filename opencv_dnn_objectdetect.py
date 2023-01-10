@@ -57,6 +57,8 @@ if __name__ == '__main__':
     font_thickness = 1
     fps_avg_frame_count = 10
     
+    isStop = False # temp variable
+    
     camera = cv2.VideoCapture(-1)
     camera.set(3, 320)
     camera.set(4, 240)
