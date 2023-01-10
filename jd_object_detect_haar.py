@@ -1,4 +1,5 @@
 import cv2
+import time
 
 stop_sign = cv2.CascadeClassifier('./models/cascade_stop_sign.xml')
 stop_width, stop_height = 40, 40
@@ -32,6 +33,18 @@ def isStopSignDetected(img):
 
 
 if __name__ == '__main__':
+    # Variables to calculate FPS
+    counter, fps = 0, 0
+    start_time = time.time()
+    
+    # Visualization parameters
+    row_size = 20  # pixels
+    left_margin = 24  # pixels
+    text_color = (0, 0, 255)  # red
+    font_size = 1
+    font_thickness = 1
+    fps_avg_frame_count = 10
+    
     camera = cv2.VideoCapture(-1)
     camera.set(3, 320)
     camera.set(4, 240)
@@ -40,10 +53,25 @@ if __name__ == '__main__':
     while True:
     
         ret, img = camera.read()
+        counter += 1
         
         if ret:
             isStop, img = isStopSignDetected(img)
+            
+                            # Calculate the FPS
+            if counter % fps_avg_frame_count == 0:
+              end_time = time.time()
+              fps = fps_avg_frame_count / (end_time - start_time)
+              start_time = time.time()
+
+            # Show the FPS
+            fps_text = 'FPS = {:.1f}'.format(fps)
+            text_location = (left_margin, row_size)
+            cv2.putText(img, fps_text, text_location, cv2.FONT_HERSHEY_PLAIN,
+                        font_size, text_color, font_thickness)
+            
             cv2.imshow("stop sign detect", img)
+            
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     camera.release()
